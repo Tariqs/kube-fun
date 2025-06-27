@@ -1,0 +1,75 @@
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pg
+
+---
+# PostgreSQL ConfigMap for initialization
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: pg
+  labels:
+    app: postgres
+data:
+  POSTGRES_DB: mydb
+  POSTGRES_USER: admin
+  POSTGRES_PASSWORD: password123
+
+---
+
+# PostgreSQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: pg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-config
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgredb
+# Node Volume    
+      volumes:
+        - name: postgredb
+          hostPath: 
+            path: /data
+# Pod Volume
+#      volumes:
+#        - name: postgredb
+#          emptyDir: {}
+
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: pg
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+  selector:
+    app: postgres
