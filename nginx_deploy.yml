@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngin-dpl
+  labels:
+    app: nginx-lbl
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-lbl
+  template:
+    metadata:
+      labels:
+        app: nginx-lbl
+    spec:
+      containers:
+      - name: sim-nginx
+        image: nginx:1.28.0-alpine-slim
+        ports:
+        - containerPort: 80

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: env-configmap-2
+spec:
+  containers:
+  - name: envars-test-container
+    image: nginx
+    env:
+    - name: CONFIGMAP_USERNAME
+      valueFrom:
+        configMapKeyRef:
+          name: myconfigmap
+          key: DB_CONNECTION
