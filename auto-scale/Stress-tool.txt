@@ -1,0 +1,6 @@
+Stress tool
+Github: https://github.com/wg/wrk?tab=readme-ov-file
+
+Command to create load
+----------------------
+wrk -c 5 -t 5 -d 300s -H "Connection: Close" http://utility-api-service:8080/api/stress
