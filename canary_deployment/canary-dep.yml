@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-canary
+  namespace: canary-demo
+  labels:
+    app: myapp
+    version: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: myapp
+        version: canary
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+        env:
+        - name: VERSION
+          value: "v2-canary"
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: html
+        configMap:
+          name: app-canary-html
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-canary-html
+  namespace: canary-demo
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Canary Version</title>
+        <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #fff0e6; }
+            h1 { color: #cc6600; }
+        </style>
+    </head>
+    <body>
+        <h1>Application Version: CANARY (v2)</h1>
+        <p>This is the new canary version of our application</p>
+        <p>🚀 New features and improvements!</p>
+        <p>Hostname: <span id="hostname"></span></p>
+        <script>
+            document.getElementById('hostname').textContent = window.location.hostname;
+        </script>
+    </body>
+    </html>

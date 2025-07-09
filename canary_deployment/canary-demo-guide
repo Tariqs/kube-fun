@@ -1,0 +1,79 @@
+# Call to canary service
+for i in {1..10}; do
+  curl -s http://canary.io | grep -o "Version: [^<]*"
+  sleep 1
+done
+
+# Monitor application logs
+
+kubectl logs -f deployment/app-stable -n canary-demo
+kubectl logs -f deployment/app-canary -n canary-demo
+
+# If canary is successful, increase traffic
+
+kubectl patch ingress app-canary-ingress -n canary-demo -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/canary-weight":"50"}}}'
+
+# If canary fails, rollback (set weight to 0)
+
+kubectl patch ingress app-canary-ingress -n canary-demo -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/canary-weight":"0"}}}'
+
+# Complete rollout (remove canary annotation)
+
+kubectl patch ingress app-canary-ingress -n canary-demo -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/canary":"false"}}}'
+
+---------------------------------------------
+
+Phase 3: Full Deployment (Complete Migration)
+
+Step 1: Scale up the canary deployment
+	bash# Scale canary to match or exceed stable replica count
+	kubectl scale deployment app-canary -n canary-demo --replicas=3
+
+# Verify pods are running
+	kubectl get pods -n canary-demo -l version=canary
+
+=====================
+	
+Step 2: Switch to 100% canary traffic
+
+bash# Set canary weight to 100% (all traffic goes to canary)
+	kubectl patch ingress app-canary-ingress -n canary-demo -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/canary-weight":"100"}}}'
+
+# Test that all traffic goes to canary
+	for i in {1..10}; do
+	  curl -s http://myapp.local | grep -o "Version: [^<]*"
+	done
+======================
+Step 3: Update the stable deployment
+
+# Update stable deployment to the new version
+	kubectl patch deployment app-stable -n canary-demo -p '{"spec":{"template":{"spec":{"containers":[{"name":"app","image":"nginx:1.21"}]}}}}'
+
+# Update stable deployment's ConfigMap to new version
+
+kubectl patch configmap app-stable-html -n canary-demo -p '{"data":{"index.html":"<!DOCTYPE html>\n<html>\n<head>\n    <title>Stable Version</title>\n    <style>\n        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #fff0e6; }\n        h1 { color: #cc6600; }\n    </style>\n</head>\n<body>\n    <h1>Application Version: STABLE (v2)</h1>\n    <p>This is the new stable version of our application</p>\n    <p>🚀 New features and improvements!</p>\n    <p>Hostname: <span id=\"hostname\"></span></p>\n    <script>\n        document.getElementById(\"hostname\").textContent = window.location.hostname;\n    </script>\n</body>\n</html>"}}'
+
+# Wait for rollout to complete
+	kubectl rollout status deployment/app-stable -n canary-demo
+=======================
+
+Step 4: Switch main traffic back to stable
+
+# Remove canary annotations (traffic goes back to main ingress -> stable service)
+	kubectl patch ingress app-canary-ingress -n canary-demo -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/canary":"false"}}}'
+
+# Or delete the canary ingress entirely
+	kubectl delete ingress app-canary-ingress -n canary-demo
+
+========================
+Step 5: Clean up canary resources
+
+# Scale down canary deployment
+	kubectl scale deployment app-canary -n canary-demo --replicas=0
+
+# Or delete canary deployment entirely
+	kubectl delete deployment app-canary -n canary-demo
+	kubectl delete service app-canary-service -n canary-demo
+	kubectl delete configmap app-canary-html -n canary-demo
+
+
