@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: dev         # This Role is scoped to the 'dev' namespace
+  name: workload-editor  # Name of the Role
+rules:
+# Rule 1: Grant permissions on Pods (which belong to the core API group)
+- apiGroups: [""]                         # "" = core API group
+  resources: ["pods"]                     # Targeting 'pods' resource
+  verbs: ["get","create", "list"]         # Allow 'create' and 'list' actions
+
+# Rule 2: Grant permissions on Deployments (which belong to the 'apps' API group)
+- apiGroups: ["apps"]                    # 'apps' API group contains Deployments, StatefulSets, etc.
+  resources: ["deployments"]             # Targeting 'deployments' resource
+  verbs: ["get","create", "list"]        # Allow 'create' and 'list' actions

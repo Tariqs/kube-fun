@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1            # API version for RBAC resources
+kind: ClusterRoleBinding                             # Grants cluster-wide access to the subject
+metadata:
+  name: bind-node-reader                             # Name of the ClusterRoleBinding
+subjects:
+- kind: User                                         # Type of subject: can be User, Group, or ServiceAccount
+  name: ali                                          # Name of the user being granted access
+  apiGroup: rbac.authorization.k8s.io                # Always this value for RBAC subjects
+roleRef:
+  kind: ClusterRole                                  # Binding to a ClusterRole (not Role)
+  name: node-reader                                  # Name of the ClusterRole defined earlier
+  apiGroup: rbac.authorization.k8s.io                # Always this value for RBAC role references

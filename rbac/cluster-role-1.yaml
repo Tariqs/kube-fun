@@ -1,0 +1,8 @@
+apiVersion: rbac.authorization.k8s.io/v1          # API version for RBAC resources
+kind: ClusterRole                                 # ClusterRole applies permissions across the whole cluster
+metadata:
+  name: node-reader                               # Name of the ClusterRole
+rules:
+- apiGroups: [""]                                  # "" indicates the core API group (e.g., nodes, pods)
+  resources: ["nodes"]                             # Targeting the 'nodes' resource (which is cluster-scoped)
+  verbs: ["get", "list", "watch"]                  # Allow read-only actions: get one node, list all, or watch for changes
