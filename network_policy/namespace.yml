@@ -1,0 +1,5 @@
+# Create our demo namespace
+kubectl create namespace demo
+
+# CRITICAL: Label kube-system namespace for DNS policies
+kubectl label namespace kube-system name=kube-system --overwrite

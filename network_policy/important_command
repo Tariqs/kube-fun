@@ -1,0 +1,56 @@
+
+echo "=== Testing DNS Resolution ==="
+kubectl exec -it debug-pod -n demo -- nslookup backend-service
+kubectl exec -it debug-pod -n demo -- nslookup database-service
+echo "DNS should work for all services"
+
+----
+
+echo "=== Testing Allowed Traffic (Should Work) ==="
+
+# 1. Frontend to Backend (should work)
+echo "1. Frontend to Backend:"
+kubectl exec -it deployment/frontend -n demo -- wget -qO- --timeout=2 http://backend-service:8080 && echo "✅ SUCCESS" || echo "❌ FAILED"
+
+# 2. Backend to Database (should work)
+echo "2. Backend to Database:"
+kubectl exec -it deployment/backend -n demo -- nc -zv database-service 5432 && echo "✅ SUCCESS" || echo "❌ FAILED"
+
+# 3. Debug pod to Backend (should work - debug pod has frontend label)
+echo "3. Debug Pod to Backend:"
+kubectl exec -it debug-pod -n demo -- wget -qO- --timeout=2 http://backend-service:8080 && echo "✅ SUCCESS" || echo "❌ FAILED"
+
+----
+
+echo "=== Testing Blocked Traffic (Should Fail) ==="
+
+# 1. Frontend to Database (should be blocked)
+echo "1. Frontend to Database (should be blocked):"
+kubectl exec -it deployment/frontend -n demo -- nc -zv database-service 5432 && echo "❌ SHOULD BE BLOCKED" || echo "✅ CORRECTLY BLOCKED"
+
+# 2. Test Pod to Backend (should be blocked)
+echo "2. Test Pod to Backend (should be blocked):"
+kubectl exec -it test-pod -n demo -- wget -qO- --timeout=2 http://backend-service:8080 && echo "❌ SHOULD BE BLOCKED" || echo "✅ CORRECTLY BLOCKED"
+
+# 3. Test Pod to Database (should be blocked)
+echo "3. Test Pod to Database (should be blocked):"
+kubectl exec -it test-pod -n demo -- nc -zv database-service 5432 && echo "❌ SHOULD BE BLOCKED" || echo "✅ CORRECTLY BLOCKED"
+
+----
+
+echo "=== Network Policy Analysis ==="
+
+# List all policies
+kubectl get networkpolicies -n demo
+
+# Describe key policies
+echo "--- Deny All Policy ---"
+kubectl describe networkpolicy deny-all -n demo
+
+echo "--- DNS Policy ---"
+kubectl describe networkpolicy allow-dns -n demo
+
+echo "--- Frontend to Backend Policy ---"
+kubectl describe networkpolicy allow-frontend-to-backend-ingress -n demo
+
+----

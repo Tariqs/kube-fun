@@ -1,0 +1,11 @@
+# Stop any existing minikube cluster
+minikube stop && minikube delete
+
+# Start minikube with Calico CNI and adequate resources
+minikube start --cni=calico --memory=4096 --cpus=2
+
+# Verify minikube is running
+minikube status
+
+# Check if network policies are supported
+kubectl api-resources | grep networkpolicies

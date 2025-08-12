@@ -1,0 +1,9 @@
+# Test Frontend to Backend
+kubectl exec -it deployment/frontend -n demo -- wget -qO- --timeout=2 http://backend-service:8080
+
+# Test Backend to Database
+kubectl exec -it deployment/backend -n demo -- nc -zv database-service 5432
+
+# Test Unauthorized Access (Test Pod to Backend)
+kubectl exec -it test-pod -n demo -- wget -qO- --timeout=2 http://backend-service:8080
+
